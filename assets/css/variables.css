@@ -1,0 +1,51 @@
+:root {
+  /* Raven Color Palette Primitives */
+  --raven-99: #FBFCFD;
+  --raven-95: #F8F9FC;
+  --raven-90: #F2F4F8;
+  --raven-80: #E3E7ED;
+  --raven-70: #CED3DE;
+  --raven-60: #969FB0;
+  --raven-50: #6C7689; /* Base color */
+  --raven-40: #4D576A;
+  --raven-30: #30394B;
+  --raven-20: #212A3B;
+  --raven-10: #141B2A;
+  --raven-5:  #0B111D;
+}
+
+/* ==========================================
+   LIGHT MODE (Default)
+   ========================================== */
+:root {
+  /* Backgrounds: Uses the brightest tones */
+  --bg-primary: var(--raven-99);   /* Main app background */
+  --bg-secondary: var(--raven-95); /* Cards, sidebars, inputs */
+  --bg-tertiary: var(--raven-90);  /* Hover states, borders */
+
+  /* Borders & Dividers */
+  --border-muted: var(--raven-80);
+
+  /* Typography: Uses the darkest tones */
+  --text-primary: var(--raven-10);   /* Main headings/body text */
+  --text-secondary: var(--raven-40); /* Subtitles, timestamps */
+  --text-muted: var(--raven-60);     /* Placeholders, disabled text */
+}
+
+/* ==========================================
+   DARK MODE OVERRIDES
+   ========================================== */
+[data-theme="dark"] {
+  /* Backgrounds: Uses the darkest tones */
+  --bg-primary: var(--raven-5);     /* Main app background */
+  --bg-secondary: var(--raven-10);  /* Cards, sidebars, inputs */
+  --bg-tertiary: var(--raven-20);   /* Hover states, borders */
+
+  /* Borders & Dividers */
+  --border-muted: var(--raven-30);
+
+  /* Typography: Uses the brightest tones */
+  --text-primary: var(--raven-95);   /* Main headings/body text */
+  --text-secondary: var(--raven-70); /* Subtitles, timestamps */
+  --text-muted: var(--raven-50);     /* Placeholders, disabled text */
+}
