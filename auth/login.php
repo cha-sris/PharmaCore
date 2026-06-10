@@ -18,15 +18,17 @@ if(session_status() === PHP_SESSION_NONE) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Login</title>
+    <link rel="shortcut icon" href="../assets/images/box_pill.svg" type="image/svg+xml">
 
     <link rel="stylesheet" href="../assets/css/variables.css">
     <link rel="stylesheet" href="../assets/css/auth.css">
 
 </head>
 <body>
+
     <div class="auth-header">
-        <h2>Pharmacore</h2>
-        <h3>Medicine Inventory Management System</h3>
+            <img src="../assets/images/box_pill.svg" alt="icon">
+            <h2>Sign in to PharmaCore</h2>
     </div>
 
     <form action="login.php" method="post">
@@ -34,7 +36,7 @@ if(session_status() === PHP_SESSION_NONE) {
         <div class="form-group">
             <label for="username">Username</label>
             <br>
-            <input type="text" required>
+            <input type="text" required autofocus>
         </div>
 
         <div class="form-group">
@@ -44,10 +46,12 @@ if(session_status() === PHP_SESSION_NONE) {
         </div>
 
         <button type="submit">Sign In</button>
+
+        <div class="auth-footer">
+            <p>Don't have an account yet? <a href="register.php">&nbsp;Register here</a></p>
+        </div>
+        
     </form>
 
-    <div class="auth-footer">
-        <p>Don't have an account yet? <a href="register.php">Register here</a></p>
-    </div>
 </body>
 </html>
