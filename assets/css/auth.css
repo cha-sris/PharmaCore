@@ -42,6 +42,7 @@ input {
     padding: 13px;
     border-radius: 10px;
     caret-color: var(--text-primary); /* Matches whatever the current text color is */
+    color: white;
 }
 
 .form-group {
