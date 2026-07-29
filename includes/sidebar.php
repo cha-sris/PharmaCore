@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 // If user is not logged in, redirect to login
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: login.php");
+    header("location: ../auth/login.php");
     exit;
 }
 ?>
@@ -14,42 +14,42 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     <div class="sidebar-header">
         <img src="../assets/images/pharmacore_icon.svg" alt="PharmaCore" class="sidebar-logo">
         <span class="sidebar-brand">PharmaCore</span>
-        <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">✕</button>
+        <!-- <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close sidebar">✕</button> -->
     </div>
 
     <nav class="sidebar-nav">
         <ul>
             <li>
                 <a href="dashboard.php" class="sidebar-link active">
-                    <span class="sidebar-icon">📊</span>
+                    <img src="../assets/images/dashboard.svg" class="sidebar-icon" alt="dashboard icon">
                     <span class="sidebar-text">Dashboard</span>
                 </a>
             </li>
             <li>
                 <a href="medicines.php" class="sidebar-link">
-                    <span class="sidebar-icon">💊</span>
+                    <img src="../assets/images/medicine.svg" class="sidebar-icon" alt="medicine icon">
                     <span class="sidebar-text">Medicines</span>
                 </a>
             </li>
             <li>
                 <a href="patients.php" class="sidebar-link">
-                    <span class="sidebar-icon">👤</span>
-                    <span class="sidebar-text">Patients</span>
+                    <img src="../assets/images/category-2.svg" class="sidebar-icon" alt="category icon">
+                    <span class="sidebar-text">Categories</span>
                 </a>
             </li>
             <li>
                 <a href="orders.php" class="sidebar-link">
-                    <span class="sidebar-icon">📦</span>
-                    <span class="sidebar-text">Orders</span>
+                    <img src="../assets/images/alert-triangle.svg" class="sidebar-icon" alt="alert icon">
+                    <span class="sidebar-text">Alerts</span>
                 </a>
             </li>
             <li>
                 <a href="suppliers.php" class="sidebar-link">
-                    <span class="sidebar-icon">🏢</span>
+                    <img src="../assets/images/medicine-company.svg" class="sidebar-icon" alt="dashboard icon">
                     <span class="sidebar-text">Suppliers</span>
                 </a>
             </li>
-            <li>
+            <!-- <li>
                 <a href="reports.php" class="sidebar-link">
                     <span class="sidebar-icon">📈</span>
                     <span class="sidebar-text">Reports</span>
@@ -60,13 +60,13 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
                     <span class="sidebar-icon">⚙️</span>
                     <span class="sidebar-text">Settings</span>
                 </a>
-            </li>
+            </li> -->
         </ul>
     </nav>
 
     <div class="sidebar-footer">
         <a href="../auth/logout.php" class="sidebar-link logout-link">
-            <span class="sidebar-icon">🚪</span>
+            <img src="../assets/images/logout.svg" class="sidebar-icon" alt="logout icon">
             <span class="sidebar-text">Logout</span>
         </a>
     </div>
