@@ -98,10 +98,10 @@
 }
 
 .sidebar-icon {
-    font-size: 1.4rem;
-    width: 28px;
-    text-align: center;
-    flex-shrink: 0;
+    /* font-size: 1.4rem; */
+    width: 24px;
+    /* text-align: center; */
+    /* flex-shrink: 0; */
 }
 
 .sidebar-text {
