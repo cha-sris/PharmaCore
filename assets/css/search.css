@@ -28,10 +28,16 @@
     gap: 6px;
 }
 
-.search-icon {
+/* .search-icon {
     font-size: 1.1rem;
     color: var(--text-muted);
     line-height: 1;
+} */
+
+.search-input-group .svg-icons {
+    width: 10px !important;
+    height: auto;
+    display: block;
 }
 
 .search-input {
