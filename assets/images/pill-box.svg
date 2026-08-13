@@ -1,26 +1,7 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
-<svg fill="#000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" 
-	 viewBox="0 0 512 512" xml:space="preserve">
-<g>
-	<g>
-		<path d="M421.8,0H90.2C84.44,0,79.772,4.668,79.772,10.428v74.037c0,5.759,4.668,10.428,10.428,10.428h5.939v406.68
-			c0,5.759,4.668,10.428,10.428,10.428h298.867c5.759,0,10.428-4.668,10.428-10.428V94.892h0.001h5.939
-			c5.759,0,10.428-4.669,10.428-10.428V10.428C432.228,4.668,427.56,0,421.8,0z M395.005,491.145H116.994v-42.754h278.012V491.145z
-			 M116.994,427.536V158.501h278.012v269.035H116.994z M395.005,137.646H116.994V94.892h278.012V137.646z M411.373,74.037H100.627
-			V20.855h310.745V74.037z"/>
-	</g>
-</g>
-<g>
-	<g>
-		<path d="M256,391.039H146.509c-5.759,0-10.428,4.669-10.428,10.428s4.668,10.428,10.428,10.428H256
-			c5.759,0,10.428-4.668,10.428-10.428S261.759,391.039,256,391.039z"/>
-	</g>
-</g>
-<g>
-	<g>
-		<path d="M305.01,391.039h-8.342c-5.759,0-10.428,4.669-10.428,10.428s4.668,10.428,10.428,10.428h8.342
-			c5.759,0,10.428-4.668,10.428-10.428S310.769,391.039,305.01,391.039z"/>
-	</g>
-</g>
-</svg>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
+<svg fill="#FFFFFF" height="800px" width="800px" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 60 60" xml:space="preserve" stroke="#FFFFFF">
+<g id="SVGRepo_bgCarrier" stroke-width="0"/>
+<g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"/>
+<g id="SVGRepo_iconCarrier"> <path d="M46,0H14c-0.553,0-1,0.448-1,1v12c0,0.552,0.447,1,1,1v7.917v30V60h32v-9.292V23.292V14c0.553,0,1-0.448,1-1V1 C47,0.448,46.553,0,46,0z M45,12h-2V2h2V12z M39,12V2h2v10H39z M35,12V2h2v10H35z M31,12V2h2v10H31z M27,12V2h2v10H27z M23,12V2h2 v10H23z M19,12V2h2v10H19z M15,2h2v10h-2V2z M16,23.917h2v26h-2V23.917z M44,28H34v2h10v2H34v2h10v2H34v2h10v2H34v2h10v2H34v2h10v4 H30V24h14V28z M44,22H28v30h16v6H16v-6.083h4v-30h-4V14h28V22z"/> </g>
+</svg>
