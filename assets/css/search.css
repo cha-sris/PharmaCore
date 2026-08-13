@@ -87,3 +87,29 @@
     background-color: var(--raven-50);
     color: var(--raven-5);
 }
+
+/* Search button inside the input group */
+.search-btn {
+    background-color: var(--bg-tertiary);
+    border: none;
+    border-radius: 40px;
+    padding: 8px 18px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+    /* Remove default button outline */
+    outline: none;
+}
+
+.search-btn:hover {
+    background-color: var(--raven-50);
+    color: var(--raven-5);
+}
+
+/* Optional: adjust spacing if needed */
+.search-input-group {
+    gap: 8px; /* already set in your CSS, but ensure it’s comfortable */
+}
