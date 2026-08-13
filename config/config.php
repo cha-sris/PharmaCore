@@ -47,6 +47,31 @@ try {
 
     $pdo->exec($medicinesTableSql);
 
+    // 6. Create the suppliers table automatically if it doesn't exist
+    $suppliersTableSql = "CREATE TABLE IF NOT EXISTS suppliers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        contact_person VARCHAR(100),
+        email VARCHAR(100),
+        phone VARCHAR(30),
+        status ENUM('Active', 'Inactive') DEFAULT 'Active',
+        address TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;";
+
+    $pdo->exec($suppliersTableSql);
+
+    // 7. Create the sales table automatically if it doesn't exist
+    $salesTableSql = "CREATE TABLE IF NOT EXISTS sales (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        medicine_id INT NOT NULL,
+        quantity_sold INT NOT NULL,
+        sold_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (medicine_id) REFERENCES medicines(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB;";
+
+    $pdo->exec($salesTableSql);
+
 } catch(PDOException $e) {
     die("Database setup failed: " . $e->getMessage());
 }
