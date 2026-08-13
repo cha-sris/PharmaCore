@@ -17,7 +17,7 @@ try {
     $pdo->exec("USE " . DB_NAME);
 
     // 4. Create the users table automatically if it doesn't exist
-    $tableSql = "CREATE TABLE IF NOT EXISTS users (
+    $usersTableSql = "CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
         email VARCHAR(100) NOT NULL UNIQUE,
@@ -25,7 +25,27 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB;";
     
-    $pdo->exec($tableSql);
+    $pdo->exec($usersTableSql);
+
+    // 5. Create the medicines table automatically if it doesn't exist
+    $medicinesTableSql = "CREATE TABLE IF NOT EXISTS medicines (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        category VARCHAR(100),
+        dosage VARCHAR(50),
+        batch_number VARCHAR(100),
+        manufacture_date DATE,
+        expiry_date DATE NOT NULL,
+        stock INT NOT NULL DEFAULT 0,
+        min_stock INT DEFAULT 10,
+        price DECIMAL(10,2) DEFAULT 0.00,
+        supplier VARCHAR(150),
+        location VARCHAR(100),
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;";
+
+    $pdo->exec($medicinesTableSql);
 
 } catch(PDOException $e) {
     die("Database setup failed: " . $e->getMessage());
