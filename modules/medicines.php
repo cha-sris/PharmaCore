@@ -11,6 +11,24 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 require_once "../config/config.php";
 require_once "../includes/validation.php"; // <--- External validation & sanitization module
 
+// Helper function to map categories to specific icons
+function getCategoryIcon($category) {
+    $cat = strtolower(trim($category));
+    switch ($cat) {
+        case 'antibiotic':
+            return 'pill-box.svg';
+        case 'antiseptic':
+            return 'ointment.svg';
+        case 'supplement':
+        case 'supplement / vitamin':
+            return 'pill-box.svg'; 
+        case 'analgesic':
+            return 'medicine.svg';
+        default:
+            return 'medicine.svg';
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     // --- ADD OR EDIT MEDICINE ---
@@ -137,6 +155,7 @@ try {
     <link rel="shortcut icon" href="../assets/images/pharmacore_icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../assets/css/variables.css">
     <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/search.css">
     <link rel="stylesheet" href="../assets/css/medicines.css">
 </head>
 <body>
@@ -148,6 +167,17 @@ try {
 
             <div class="page-header">
                 <h2>Medicines Inventory</h2>
+                <!-- Search Bar with Search Button -->
+                <div class="search-wrapper">
+                    <div class="search-form" role="search">
+                        <div class="search-input-group">
+                            <input type="text" id="medicineSearch" class="search-input" placeholder="Search medicines by name, category, batch..." onkeyup="filterMedicines()">
+                            <button type="button" class="search-btn" onclick="filterMedicines()">Search
+                                <!-- <img src="../assets/images/search_icon.svg" alt="Search" class="icon-img"> -->
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <?php if (!empty($db_error)): ?>
@@ -158,9 +188,9 @@ try {
                 <div class="alert alert-success"><?php echo htmlspecialchars($success_msg); ?></div>
             <?php endif; ?>
 
-            <div class="medicine-grid">
+            <div class="medicine-grid" id="medicineGrid">
 
-                <!-- 1. Add Medicine Tile -->
+                <!-- 1. Add Medicine Tile (Always visible) -->
                 <div class="med-card add-card" onclick="openAddModal()">
                     <div class="add-icon">
                         <img src="../assets/images/add_icon.svg" alt="Add" class="icon-img">
@@ -173,11 +203,15 @@ try {
                     <?php 
                         $stock = (int)$med['stock'];
                         $json_data = htmlspecialchars(json_encode($med), ENT_QUOTES, 'UTF-8');
+                        $categoryIcon = getCategoryIcon($med['category']);
                     ?>
-                    <div class="med-card clickable" onclick="openDetailsModal(this)" data-medicine='<?php echo $json_data; ?>'>
+                    <div class="med-card clickable searchable-card" 
+                         onclick="openDetailsModal(this)" 
+                         data-medicine='<?php echo $json_data; ?>'
+                         data-search-text="<?php echo strtolower(htmlspecialchars($med['name'] . ' ' . $med['category'] . ' ' . $med['batch_number'] . ' ' . $med['supplier'], ENT_QUOTES)); ?>">
                         <div class="med-collapsed">
                             <div class="med-icon">
-                                <img src="../assets/images/medicine_icon.svg" alt="Medicine" class="icon-img">
+                                <img src="../assets/images/<?php echo $categoryIcon; ?>" alt="Medicine Category" class="icon-img">
                             </div>
                             <h3 class="med-title"><?php echo htmlspecialchars($med['name']); ?></h3>
                             <span class="badge-compact"><?php echo $stock; ?> Units</span>
@@ -185,6 +219,11 @@ try {
                     </div>
                 <?php endforeach; ?>
 
+            </div>
+
+            <!-- No results notice element -->
+            <div id="noResults" class="no-results-msg" style="display: none;">
+                <p>No matching medicines found.</p>
             </div>
 
         </div>
@@ -202,13 +241,13 @@ try {
                 </button>
             </div>
 
-            <form action="medicines.php" method="POST" onsubmit="return validateForm(this)" novalidate>
+            <form action="medicines.php" method="POST" novalidate>
                 <input type="hidden" name="action" value="add_medicine">
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="name">Medicine Name *</label>
-                        <input type="text" id="name" name="name" required placeholder="e.g. Paracetamol" oninput="this.setCustomValidity('')">
+                        <input type="text" id="name" name="name" required placeholder="e.g. Paracetamol">
                     </div>
 
                     <div class="form-group">
@@ -224,47 +263,47 @@ try {
 
                     <div class="form-group">
                         <label for="dosage">Dosage / Strength (e.g. 500mg, 10.5ml)</label>
-                        <input type="text" id="dosage" name="dosage" placeholder="e.g. 500mg, 10.5ml" oninput="this.setCustomValidity('')">
+                        <input type="text" id="dosage" name="dosage" placeholder="e.g. 500mg, 10.5ml">
                     </div>
 
                     <div class="form-group">
                         <label for="batch_number">Batch / Lot Number</label>
-                        <input type="text" id="batch_number" name="batch_number" placeholder="e.g. BATCH-992" oninput="this.setCustomValidity('')">
+                        <input type="text" id="batch_number" name="batch_number" placeholder="e.g. BATCH-992">
                     </div>
 
                     <div class="form-group">
                         <label for="manufacture_date">Manufacture Date *</label>
-                        <input type="date" id="manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>" oninput="this.setCustomValidity('')">
+                        <input type="date" id="manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>">
                     </div>
 
                     <div class="form-group">
                         <label for="expiry_date">Expiry Date *</label>
-                        <input type="date" id="expiry_date" name="expiry_date" required oninput="this.setCustomValidity('')">
+                        <input type="date" id="expiry_date" name="expiry_date" required>
                     </div>
 
                     <div class="form-group">
                         <label for="stock">No. of Items (Stock) *</label>
-                        <input type="number" id="stock" name="stock" value="1" min="1" required oninput="this.setCustomValidity('')">
+                        <input type="number" id="stock" name="stock" value="1" min="1" required>
                     </div>
 
                     <div class="form-group">
                         <label for="min_stock">Low Stock Alert Threshold</label>
-                        <input type="number" id="min_stock" name="min_stock" value="10" min="1" oninput="this.setCustomValidity('')">
+                        <input type="number" id="min_stock" name="min_stock" value="10" min="1">
                     </div>
 
                     <div class="form-group">
                         <label for="price">Price *</label>
-                        <input type="number" step="0.01" id="price" name="price" required placeholder="0.00" min="0.01" oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" id="price" name="price" required placeholder="0.00" min="0.01">
                     </div>
 
                     <div class="form-group">
                         <label for="supplier">Supplier</label>
-                        <input type="text" id="supplier" name="supplier" placeholder="e.g. MedicoPharma Ltd." oninput="this.setCustomValidity('')">
+                        <input type="text" id="supplier" name="supplier" placeholder="e.g. MedicoPharma Ltd.">
                     </div>
 
                     <div class="form-group">
                         <label for="location">Rack / Storage Location</label>
-                        <input type="text" id="location" name="location" placeholder="e.g. Rack A-2" oninput="this.setCustomValidity('')">
+                        <input type="text" id="location" name="location" placeholder="e.g. Rack A-2">
                     </div>
 
                     <div class="form-group full">
@@ -331,14 +370,14 @@ try {
                 </button>
             </div>
 
-            <form action="medicines.php" method="POST" onsubmit="return validateForm(this)" novalidate>
+            <form action="medicines.php" method="POST" novalidate>
                 <input type="hidden" name="action" value="edit_medicine">
                 <input type="hidden" name="id" id="edit_id">
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="edit_name">Medicine Name *</label>
-                        <input type="text" id="edit_name" name="name" required oninput="this.setCustomValidity('')">
+                        <input type="text" id="edit_name" name="name" required>
                     </div>
 
                     <div class="form-group">
@@ -354,47 +393,47 @@ try {
 
                     <div class="form-group">
                         <label for="edit_dosage">Dosage / Strength (e.g. 500mg, 10.5ml)</label>
-                        <input type="text" id="edit_dosage" name="dosage" oninput="this.setCustomValidity('')">
+                        <input type="text" id="edit_dosage" name="dosage">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_batch_number">Batch / Lot Number</label>
-                        <input type="text" id="edit_batch_number" name="batch_number" oninput="this.setCustomValidity('')">
+                        <input type="text" id="edit_batch_number" name="batch_number">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_manufacture_date">Manufacture Date *</label>
-                        <input type="date" id="edit_manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>" oninput="this.setCustomValidity('')">
+                        <input type="date" id="edit_manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_expiry_date">Expiry Date *</label>
-                        <input type="date" id="edit_expiry_date" name="expiry_date" required oninput="this.setCustomValidity('')">
+                        <input type="date" id="edit_expiry_date" name="expiry_date" required>
                     </div>
 
                     <div class="form-group">
                         <label for="edit_stock">No. of Items (Stock) *</label>
-                        <input type="number" id="edit_stock" name="stock" min="1" required oninput="this.setCustomValidity('')">
+                        <input type="number" id="edit_stock" name="stock" min="1" required>
                     </div>
 
                     <div class="form-group">
                         <label for="edit_min_stock">Low Stock Alert Threshold</label>
-                        <input type="number" id="edit_min_stock" name="min_stock" min="1" oninput="this.setCustomValidity('')">
+                        <input type="number" id="edit_min_stock" name="min_stock" min="1">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_price">Price *</label>
-                        <input type="number" step="0.01" id="edit_price" name="price" required min="0.01" oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" id="edit_price" name="price" required min="0.01">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_supplier">Supplier</label>
-                        <input type="text" id="edit_supplier" name="supplier" oninput="this.setCustomValidity('')">
+                        <input type="text" id="edit_supplier" name="supplier">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_location">Rack / Storage Location</label>
-                        <input type="text" id="edit_location" name="location" oninput="this.setCustomValidity('')">
+                        <input type="text" id="edit_location" name="location">
                     </div>
 
                     <div class="form-group full">
@@ -472,142 +511,29 @@ try {
         }
     }
 
-    function validateForm(form) {
-        const nameInput     = form.querySelector('input[name="name"]');
-        const dosageInput   = form.querySelector('input[name="dosage"]');
-        const batchInput    = form.querySelector('input[name="batch_number"]');
-        const mfgInput      = form.querySelector('input[name="manufacture_date"]');
-        const expInput      = form.querySelector('input[name="expiry_date"]');
-        const stockInput    = form.querySelector('input[name="stock"]');
-        const priceInput    = form.querySelector('input[name="price"]');
-        const supplierInput = form.querySelector('input[name="supplier"]');
-        const locationInput = form.querySelector('input[name="location"]');
+    // Real-time Search / Filter Logic
+    function filterMedicines() {
+        const query = document.getElementById('medicineSearch').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.searchable-card');
+        const noResults = document.getElementById('noResults');
+        let visibleCount = 0;
 
-        // Reset all previous error messages
-        [nameInput, dosageInput, batchInput, mfgInput, expInput, stockInput, priceInput, supplierInput, locationInput].forEach(input => {
-            if (input) input.setCustomValidity('');
+        cards.forEach(card => {
+            const searchText = card.getAttribute('data-search-text');
+            if (searchText.includes(query)) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
         });
 
-        // 1. Medicine Name
-        if (nameInput) {
-            const nameVal = nameInput.value.trim();
-            if (!nameVal) {
-                nameInput.setCustomValidity("Please enter the medicine name.");
-                nameInput.reportValidity();
-                return false;
-            }
-            if (!/^(?=.*[a-zA-Z0-9])(?!.*--)(?!.*\.\.)[a-zA-Z0-9\s\.\-\(\)]{2,100}$/.test(nameVal)) {
-                nameInput.setCustomValidity("Medicine name must contain letters/numbers and cannot consist only of symbols.");
-                nameInput.reportValidity();
-                return false;
-            }
+        // Show or hide the 'no results' message
+        if (visibleCount === 0 && query !== '') {
+            noResults.style.display = 'block';
+        } else {
+            noResults.style.display = 'none';
         }
-
-        // 2. Dosage Format
-        if (dosageInput && dosageInput.value.trim() !== '') {
-            const dosagePattern = /^\d+(\.\d+)?\s*(mg|ml)$/i;
-            if (!dosagePattern.test(dosageInput.value.trim())) {
-                dosageInput.setCustomValidity("Please enter a valid dosage format (e.g., 500mg, 10.5ml).");
-                dosageInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 3. Batch / Lot Number
-        if (batchInput && batchInput.value.trim() !== '') {
-            if (!/^(?=.*[a-zA-Z0-9])(?!.*--)(?!.*\.\.)[a-zA-Z0-9\s\.\-\/]{1,50}$/.test(batchInput.value.trim())) {
-                batchInput.setCustomValidity("Batch number must contain letters or numbers and cannot be just dots or hyphens.");
-                batchInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 4. Manufacture Date (Mandatory & Cannot be in the future)
-        if (mfgInput) {
-            if (!mfgInput.value) {
-                mfgInput.setCustomValidity("Manufacture date is required.");
-                mfgInput.reportValidity();
-                return false;
-            }
-
-            const mfgDate = new Date(mfgInput.value + 'T00:00:00');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            if (mfgDate > today) {
-                mfgInput.setCustomValidity("Manufacture date cannot be in the future.");
-                mfgInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 5. Expiry Date (Mandatory & Must be in the future)
-        if (expInput) {
-            if (!expInput.value) {
-                expInput.setCustomValidity("Please select an expiry date.");
-                expInput.reportValidity();
-                return false;
-            }
-
-            const expDate = new Date(expInput.value + 'T00:00:00');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            if (expDate <= today) {
-                expInput.setCustomValidity("Expiry date must be in the future (cannot be today or in the past).");
-                expInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 6. Date Comparison (Manufacture Date < Expiry Date)
-        if (mfgInput && expInput && mfgInput.value && expInput.value) {
-            const mfgDate = new Date(mfgInput.value + 'T00:00:00');
-            const expDate = new Date(expInput.value + 'T00:00:00');
-
-            if (mfgDate >= expDate) {
-                mfgInput.setCustomValidity("Manufacture Date must be earlier than Expiry Date.");
-                mfgInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 7. Stock Check
-        if (stockInput && (stockInput.value === '' || parseInt(stockInput.value, 10) <= 0)) {
-            stockInput.setCustomValidity("Stock units must be greater than 0.");
-            stockInput.reportValidity();
-            return false;
-        }
-
-        // 8. Price Check (Mandatory & Must be > 0)
-        if (priceInput) {
-            const priceVal = parseFloat(priceInput.value);
-            if (priceInput.value.trim() === '' || isNaN(priceVal) || priceVal <= 0) {
-                priceInput.setCustomValidity("Price is required and must be greater than 0.");
-                priceInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 9. Supplier Validation
-        if (supplierInput && supplierInput.value.trim() !== '') {
-            if (!/^(?=.*[a-zA-Z0-9])(?!.*--)(?!.*\.\.)[a-zA-Z0-9\s\.\-\&]{2,100}$/.test(supplierInput.value.trim())) {
-                supplierInput.setCustomValidity("Supplier name must contain letters/numbers and cannot consist only of dots or symbols.");
-                supplierInput.reportValidity();
-                return false;
-            }
-        }
-
-        // 10. Storage Location
-        if (locationInput && locationInput.value.trim() !== '') {
-            if (!/^(?=.*[a-zA-Z0-9])(?!.*--)(?!.*\.\.)[a-zA-Z0-9\s\.\-\/]{1,50}$/.test(locationInput.value.trim())) {
-                locationInput.setCustomValidity("Storage location must contain letters/numbers and cannot consist only of dots or symbols.");
-                locationInput.reportValidity();
-                return false;
-            }
-        }
-
-        return true;
     }
 
     // Close modal when clicking on backdrop
