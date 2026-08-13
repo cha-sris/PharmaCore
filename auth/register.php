@@ -36,9 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['username'] = "Username is required.";
     } else {
         $username = trim($_POST['username']);
-        if (strlen($username) < 3) {
-            $errors['username'] = "Username must be at least 3 characters long.";
-        } else {
+        // if (strlen($username) < 3) {
+        //     $errors['username'] = "Username must be at least 3 characters long.";
+        // }
+        if (!preg_match('/^(?!.*\.\.)(?!^\.)[a-zA-Z0-9._]{1,30}(?<!\.)$/', $username)) {
+            $errors['username'] = "Username must be 1–30 characters, using only letters, numbers, underscores, and periods (cannot start/end with a period or have consecutive periods).";
+        }
+         else {
             // Check if username already exists
             $sql = "SELECT id FROM users WHERE username = :username";
             $stmt = $pdo->prepare($sql);
@@ -54,9 +58,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['password'] = "Password is required.";
     } else {
         $password = $_POST['password'];
-        if (strlen($password) < 8) {
-            $errors['password'] = "Password must be at least 8 characters long.";
-        }
+        $pwd_errors = [];
+
+    if (strlen($password) < 8) {
+        $pwd_errors[] = "at least 8 characters long";
+    }
+    if (!preg_match('/[A-Z]/', $password)) {
+        $pwd_errors[] = "at least one uppercase letter";
+    }
+    if (!preg_match('/[a-z]/', $password)) {
+        $pwd_errors[] = "at least one lowercase letter";
+    }
+    if (!preg_match('/[0-9]/', $password)) {
+        $pwd_errors[] = "at least one number";
+    }
+    if (!preg_match('/[\W_]/', $password)) {
+        $pwd_errors[] = "at least one special character";
+    }
+
+    if (!empty($pwd_errors)) {
+        $errors['password'] = "Password must include:<br>• " . implode("<br>• ", $pwd_errors);
+        $password = "";
+        $confirm_password = "";
+    }
+        // if (strlen($password) < 8) {
+        //     $errors['password'] = "Password must be at least 8 characters long.";
+        // }
     }
 
     // 4. Validate Confirm Password
@@ -119,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Sign up to PharmaCore</h2>
     </div>
 
-    <form action="" method="post">
+    <form action="" method="post" novalidate>
 
         <div class="form-group">
             <label for="email">Email</label>
@@ -142,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label for="password">Password</label>
             <br>
-            <input type="password" name="password" id="password" required>
+            <input type="password" name="password" id="password" value="" autocomplete="new-password" required>
             <?php if (isset($errors['password'])): ?>
                 <div class="error-message"><?php echo $errors['password']; ?></div>
             <?php endif; ?>
@@ -151,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label for="confirm_password">Confirm Password</label>
             <br>
-            <input type="password" name="confirm_password" id="confirm_password" required>
+            <input type="password" name="confirm_password" id="confirm_password" value="" autocomplete="new-password" required>
             <?php if (isset($errors['confirm_password'])): ?>
                 <div class="error-message"><?php echo $errors['confirm_password']; ?></div>
             <?php endif; ?>
