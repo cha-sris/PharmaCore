@@ -1,3 +1,7 @@
+/* ==========================================================================
+   MEDICINES MODULE STYLESHEET (Raven Standardized)
+   ========================================================================== */
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -6,44 +10,51 @@
 }
 
 body {
-    background-color: #0f172a;
-    color: #f8fafc;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     min-height: 100vh;
-    display: flex;
 }
 
-/* Main Content Wrapper (adjusts beside sidebar) */
+/* Main Content Wrapper */
 .main-content {
-    flex: 1;
-    padding: 30px 20px;
+    margin-left: var(--sidebar-width);
+    padding: 2.5rem 3rem;
+    min-height: 100vh;
+    box-sizing: border-box;
+    width: calc(100% - var(--sidebar-width));
 }
 
 .container {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0;
 }
 
-/* Page Header */
+/* Unified Page Header */
 .page-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 24px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--border-muted);
 }
 
 .page-header h2 {
-    font-size: 1.6rem;
-    color: #f8fafc;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .header-icon {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
 }
 
 /* Alerts */
@@ -77,18 +88,18 @@ body {
 .med-card {
     position: relative;
     height: 240px;
-    background-color: #1e293b;
-    border: 1px solid #334155;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-muted);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .med-card:hover {
     transform: translateY(-4px);
-    border-color: #38bdf8;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    border-color: var(--raven-50);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
 }
 
 /* Add New Medicine Card */
@@ -97,17 +108,17 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 2px dashed #475569;
-    background-color: rgba(30, 41, 59, 0.4);
+    border: 2px dashed var(--border-muted);
+    background-color: var(--bg-secondary);
     cursor: pointer;
-    color: #94a3b8;
+    color: var(--text-muted);
     width: 100%;
 }
 
 .add-card:hover {
-    border-color: #38bdf8;
-    color: #38bdf8;
-    background-color: rgba(56, 189, 248, 0.05);
+    border-color: var(--raven-50);
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
 }
 
 .add-icon {
@@ -119,15 +130,8 @@ body {
     margin-bottom: 8px;
 }
 
-.icon-img {
-    width: 32px;
-    height: 32px;
-}
-
-.icon-img-sm {
-    width: 20px;
-    height: 20px;
-}
+.icon-img { width: 32px; height: 32px; }
+.icon-img-sm { width: 20px; height: 20px; }
 
 .add-text {
     font-size: 0.95rem;
@@ -148,7 +152,7 @@ body {
 .med-icon {
     width: 52px;
     height: 52px;
-    background: rgba(56, 189, 248, 0.1);
+    background: var(--bg-tertiary);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -159,7 +163,7 @@ body {
 .med-title {
     font-size: 1.1rem;
     font-weight: 600;
-    color: #f8fafc;
+    color: var(--text-primary);
     margin-bottom: 6px;
 }
 
@@ -167,15 +171,15 @@ body {
     font-size: 0.8rem;
     padding: 3px 10px;
     border-radius: 12px;
-    background-color: rgba(51, 65, 85, 0.8);
-    color: #cbd5e1;
+    background-color: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 
 /* Hover Expanded Overlay */
 .med-overlay {
     position: absolute;
     inset: 0;
-    background-color: #1e293b;
+    background-color: var(--bg-secondary);
     padding: 18px;
     display: flex;
     flex-direction: column;
@@ -198,18 +202,18 @@ body {
 
 .overlay-header h4 {
     font-size: 1.05rem;
-    color: #f8fafc;
+    color: var(--text-primary);
 }
 
 .dosage-badge {
-    color: #38bdf8;
+    color: var(--raven-50);
     font-size: 0.8rem;
     font-weight: 500;
 }
 
 .med-description {
     font-size: 0.82rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     margin-top: 6px;
     line-height: 1.3;
 }
@@ -217,11 +221,11 @@ body {
 .stock-info {
     font-size: 0.88rem;
     font-weight: 600;
-    color: #e2e8f0;
+    color: var(--text-secondary);
     margin: 10px 0 6px 0;
 }
 
-/* Expiry Status Badges & Image Icons */
+/* Expiry Status Badges */
 .expiry-list {
     display: flex;
     flex-direction: column;
@@ -236,11 +240,6 @@ body {
     align-items: center;
     gap: 6px;
     font-weight: 500;
-}
-
-.tag-icon {
-    width: 14px;
-    height: 14px;
 }
 
 .expiry-tag.danger {
@@ -265,7 +264,7 @@ body {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(4px);
     display: none;
     align-items: center;
@@ -279,15 +278,15 @@ body {
 }
 
 .modal-content {
-    background-color: #1e293b;
-    border: 1px solid #334155;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-muted);
     border-radius: 12px;
     width: 100%;
     max-width: 650px;
     max-height: 90vh;
     overflow-y: auto;
     padding: 24px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -296,12 +295,12 @@ body {
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid var(--border-muted);
 }
 
 .modal-header h3 {
     font-size: 1.25rem;
-    color: #f8fafc;
+    color: var(--text-primary);
 }
 
 .close-btn {
@@ -337,7 +336,7 @@ body {
 .form-group label {
     display: block;
     font-size: 0.85rem;
-    color: #cbd5e1;
+    color: var(--text-secondary);
     margin-bottom: 6px;
 }
 
@@ -346,10 +345,10 @@ body {
 .form-group textarea {
     width: 100%;
     padding: 8px 12px;
-    background-color: #0f172a;
-    border: 1px solid #334155;
+    background-color: var(--bg-tertiary);
+    border: 1px solid var(--border-muted);
     border-radius: 6px;
-    color: #f8fafc;
+    color: var(--text-primary);
     font-size: 0.9rem;
 }
 
@@ -357,67 +356,70 @@ body {
 .form-group select:focus, 
 .form-group textarea:focus {
     outline: none;
-    border-color: #38bdf8;
+    border-color: var(--raven-50);
 }
-
-/* .modal-footer {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-} */
 
 .modal-footer {
     display: flex;
     align-items: center;
     justify-content: flex-end; 
-    gap: 12px;                  /* Space between Edit and Delete buttons */
+    gap: 12px;
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--border-muted);
 }
 
-/* Override form margin to prevent pushing Delete to the left */
 .modal-footer form {
     margin-right: 0 !important;
     display: inline-block;
 }
 
-.btn-submit {
-    background-color: #38bdf8;
-    color: #0f172a;
+/* Modal Form Action Buttons (Save / Cancel) */
+.btn-submit,
+.btn-primary {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     border: none;
     padding: 10px 20px;
-    border-radius: 6px;
+    border-radius: 8px;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.btn-submit:hover {
-    background-color: #0284c7;
-    color: #fff;
+.btn-submit:hover,
+.btn-primary:hover {
+    background-color: var(--btn-primary-hover);
 }
 
-.btn-cancel {
-    background: transparent;
-    color: #94a3b8;
-    border: 1px solid #475569;
+.btn-submit:active,
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-cancel,
+.btn-secondary {
+    background-color: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--btn-secondary-border);
     padding: 10px 18px;
-    border-radius: 6px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.btn-cancel:hover {
-    background: #334155;
-    color: #fff;
+.btn-cancel:hover,
+.btn-secondary:hover {
+    background-color: var(--btn-secondary-hover);
+    color: var(--text-primary);
 }
 
-/* Clickable Cards */
-.med-card.clickable {
-    cursor: pointer;
-}
+/* Clickable Cards & Details */
+.med-card.clickable { cursor: pointer; }
 
-/* Details Modal Grid Display */
 .details-body {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -426,38 +428,36 @@ body {
 }
 
 .detail-row {
-    background: #0f172a;
+    background: var(--bg-tertiary);
     padding: 10px 14px;
     border-radius: 8px;
-    border: 1px solid #334155;
+    border: 1px solid var(--border-muted);
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 
-.detail-row.full {
-    grid-column: span 2;
-}
+.detail-row.full { grid-column: span 2; }
 
 .detail-row span {
     font-size: 0.78rem;
-    color: #94a3b8;
+    color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .detail-row strong {
     font-size: 0.95rem;
-    color: #f8fafc;
+    color: var(--text-primary);
 }
 
 .detail-row p {
     font-size: 0.88rem;
-    color: #cbd5e1;
+    color: var(--text-secondary);
     line-height: 1.4;
 }
 
-/* Delete Button */
+/* Specific Contextual Buttons (Delete / Edit) */
 .btn-danger {
     background-color: rgba(239, 68, 68, 0.15);
     color: #fca5a5;
@@ -474,7 +474,6 @@ body {
     color: #ffffff;
 }
 
-/* Edit Button */
 .btn-edit {
     background-color: rgba(245, 158, 11, 0.15);
     color: #fcd34d;
@@ -491,24 +490,41 @@ body {
     color: #0f172a;
 }
 
-/* ========================================== */
-/* ADDITIONS (Modal Error Banner & Details)  */
-/* ========================================== */
+/* Table Action Buttons */
+.btn-action,
+table button,
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--btn-action-bg);
+    color: var(--btn-action-text);
+    border: 1px solid var(--btn-action-border);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
 
-.modal-error-banner {
-    display: none;
-    background-color: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #fca5a5;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 0.88rem;
-    margin-bottom: 16px;
-    font-weight: 500;
+.btn-action:hover,
+table button:hover,
+.action-btn:hover {
+    background-color: var(--btn-action-hover);
+    color: var(--text-primary);
 }
 
 .unit-text {
     font-weight: 400;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 1.5rem;
+    }
 }
