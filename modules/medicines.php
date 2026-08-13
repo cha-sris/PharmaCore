@@ -9,175 +9,83 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 }
 
 require_once "../config/config.php";
-
-// Helper function to sanitize text input
-if (!function_exists('sanitize_text')) {
-    function sanitize_text($data) {
-        if (empty($data)) return '';
-        $data = trim($data);
-        $data = stripslashes($data);
-        $data = strip_tags($data);
-        return $data;
-    }
-}
+require_once "../includes/validation.php"; // <--- External validation & sanitization module
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
-    // --- ADD MEDICINE ---
-    if ($_POST['action'] === 'add_medicine') {
+    // --- ADD OR EDIT MEDICINE ---
+    if ($_POST['action'] === 'add_medicine' || $_POST['action'] === 'edit_medicine') {
+        $is_edit = ($_POST['action'] === 'edit_medicine');
+
+        // 1. Sanitize all incoming input
+        $id               = sanitize_int($_POST['id'] ?? 0);
         $name             = sanitize_text($_POST['name'] ?? '');
         $category         = sanitize_text($_POST['category'] ?? '');
-        $manufacture_date = !empty($_POST['manufacture_date']) ? $_POST['manufacture_date'] : null;
-        $expiry_date      = $_POST['expiry_date'] ?? '';
-        $stock            = (int)($_POST['stock'] ?? 0);
+        $manufacture_date = sanitize_text($_POST['manufacture_date'] ?? '');
+        $expiry_date      = sanitize_text($_POST['expiry_date'] ?? '');
+        $stock            = sanitize_int($_POST['stock'] ?? 0);
         $supplier         = sanitize_text($_POST['supplier'] ?? '');
-        $price            = isset($_POST['price']) && $_POST['price'] !== '' ? (float)$_POST['price'] : 0.00;
+        $price            = sanitize_float($_POST['price'] ?? 0.00);
         $batch_number     = sanitize_text($_POST['batch_number'] ?? '');
         $dosage           = sanitize_text($_POST['dosage'] ?? '');
         $location         = sanitize_text($_POST['location'] ?? '');
-        $min_stock        = (int)($_POST['min_stock'] ?? 5);
+        $min_stock        = sanitize_int($_POST['min_stock'] ?? 5);
         $description      = sanitize_text($_POST['description'] ?? '');
 
-        $errors = [];
-
-        if (empty($name) || empty($expiry_date) || empty($manufacture_date)) {
-            $errors[] = "Medicine name, manufacture date, and expiry date are required.";
-        }
-
-        if ($price <= 0) {
-            $errors[] = "Price is required and must be greater than 0.";
-        }
-
-        if ($stock <= 0) {
-            $errors[] = "Stock units must be greater than 0.";
-        }
-
-        $today = date('Y-m-d');
-        if (!empty($manufacture_date) && $manufacture_date > $today) {
-            $errors[] = "Manufacture date cannot be in the future.";
-        }
-
-        if (!empty($expiry_date) && $expiry_date <= $today) {
-            $errors[] = "Expiry date must be in the future.";
-        }
-
-        if (!empty($manufacture_date) && !empty($expiry_date)) {
-            if (strtotime($manufacture_date) >= strtotime($expiry_date)) {
-                $errors[] = "Manufacture date must be earlier than the expiry date.";
-            }
-        }
-
-        if (!empty($dosage) && !preg_match('/^\d+(\.\d+)?\s*(mg|ml)$/i', $dosage)) {
-            $errors[] = "Dosage must be a valid number followed by 'mg' or 'ml' (e.g., 500mg, 10.5ml).";
-        }
+        // 2. Validate form data against rules in includes/validation.php
+        $errors = validate_medicine_form($_POST, $is_edit);
 
         if (!empty($errors)) {
             $_SESSION['flash_error'] = implode(" ", $errors);
         } else {
             try {
-                $sql = "INSERT INTO medicines (name, category, manufacture_date, expiry_date, stock, supplier, price, batch_number, dosage, location, min_stock, description) 
-                        VALUES (:name, :category, :mfg, :exp, :stock, :supplier, :price, :batch, :dosage, :location, :min_stock, :desc)";
-                
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    ':name'      => $name,
-                    ':category'  => $category,
-                    ':mfg'       => $manufacture_date,
-                    ':exp'       => $expiry_date,
-                    ':stock'     => $stock,
-                    ':supplier'  => $supplier,
-                    ':price'     => $price,
-                    ':batch'     => $batch_number,
-                    ':dosage'    => $dosage,
-                    ':location'  => $location,
-                    ':min_stock' => $min_stock,
-                    ':desc'      => $description
-                ]);
+                if ($is_edit) {
+                    $sql = "UPDATE medicines SET 
+                                name = :name, category = :category, manufacture_date = :mfg, 
+                                expiry_date = :exp, stock = :stock, supplier = :supplier, 
+                                price = :price, batch_number = :batch, dosage = :dosage, 
+                                location = :location, min_stock = :min_stock, description = :desc 
+                            WHERE id = :id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':id'        => $id,
+                        ':name'      => $name,
+                        ':category'  => $category,
+                        ':mfg'       => $manufacture_date,
+                        ':exp'       => $expiry_date,
+                        ':stock'     => $stock,
+                        ':supplier'  => $supplier,
+                        ':price'     => $price,
+                        ':batch'     => $batch_number,
+                        ':dosage'    => $dosage,
+                        ':location'  => $location,
+                        ':min_stock' => $min_stock,
+                        ':desc'      => $description
+                    ]);
 
-                $_SESSION['flash_success'] = "Medicine added successfully!";
-            } catch (PDOException $e) {
-                $_SESSION['flash_error'] = "Database Error: " . $e->getMessage();
-            }
-        }
-    }
+                    $_SESSION['flash_success'] = "Medicine updated successfully!";
+                } else {
+                    $sql = "INSERT INTO medicines (name, category, manufacture_date, expiry_date, stock, supplier, price, batch_number, dosage, location, min_stock, description) 
+                            VALUES (:name, :category, :mfg, :exp, :stock, :supplier, :price, :batch, :dosage, :location, :min_stock, :desc)";
+                    
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        ':name'      => $name,
+                        ':category'  => $category,
+                        ':mfg'       => $manufacture_date,
+                        ':exp'       => $expiry_date,
+                        ':stock'     => $stock,
+                        ':supplier'  => $supplier,
+                        ':price'     => $price,
+                        ':batch'     => $batch_number,
+                        ':dosage'    => $dosage,
+                        ':location'  => $location,
+                        ':min_stock' => $min_stock,
+                        ':desc'      => $description
+                    ]);
 
-    // --- EDIT MEDICINE ---
-    elseif ($_POST['action'] === 'edit_medicine') {
-        $id               = (int)($_POST['id'] ?? 0);
-        $name             = sanitize_text($_POST['name'] ?? '');
-        $category         = sanitize_text($_POST['category'] ?? '');
-        $manufacture_date = !empty($_POST['manufacture_date']) ? $_POST['manufacture_date'] : null;
-        $expiry_date      = $_POST['expiry_date'] ?? '';
-        $stock            = (int)($_POST['stock'] ?? 0);
-        $supplier         = sanitize_text($_POST['supplier'] ?? '');
-        $price            = isset($_POST['price']) && $_POST['price'] !== '' ? (float)$_POST['price'] : 0.00;
-        $batch_number     = sanitize_text($_POST['batch_number'] ?? '');
-        $dosage           = sanitize_text($_POST['dosage'] ?? '');
-        $location         = sanitize_text($_POST['location'] ?? '');
-        $min_stock        = (int)($_POST['min_stock'] ?? 5);
-        $description      = sanitize_text($_POST['description'] ?? '');
-
-        $errors = [];
-
-        if ($id <= 0 || empty($name) || empty($expiry_date) || empty($manufacture_date)) {
-            $errors[] = "Valid Medicine ID, name, manufacture date, and expiry date are required.";
-        }
-
-        if ($price <= 0) {
-            $errors[] = "Price is required and must be greater than 0.";
-        }
-
-        if ($stock <= 0) {
-            $errors[] = "Stock units must be greater than 0.";
-        }
-
-        $today = date('Y-m-d');
-        if (!empty($manufacture_date) && $manufacture_date > $today) {
-            $errors[] = "Manufacture date cannot be in the future.";
-        }
-
-        if (!empty($expiry_date) && $expiry_date <= $today) {
-            $errors[] = "Expiry date must be in the future.";
-        }
-
-        if (!empty($manufacture_date) && !empty($expiry_date)) {
-            if (strtotime($manufacture_date) >= strtotime($expiry_date)) {
-                $errors[] = "Manufacture date must be earlier than the expiry date.";
-            }
-        }
-
-        if (!empty($dosage) && !preg_match('/^\d+(\.\d+)?\s*(mg|ml)$/i', $dosage)) {
-            $errors[] = "Dosage must be a valid number followed by 'mg' or 'ml' (e.g., 500mg, 10.5ml).";
-        }
-
-        if (!empty($errors)) {
-            $_SESSION['flash_error'] = implode(" ", $errors);
-        } else {
-            try {
-                $sql = "UPDATE medicines SET 
-                            name = :name, category = :category, manufacture_date = :mfg, 
-                            expiry_date = :exp, stock = :stock, supplier = :supplier, 
-                            price = :price, batch_number = :batch, dosage = :dosage, 
-                            location = :location, min_stock = :min_stock, description = :desc 
-                        WHERE id = :id";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    ':id'        => $id,
-                    ':name'      => $name,
-                    ':category'  => $category,
-                    ':mfg'       => $manufacture_date,
-                    ':exp'       => $expiry_date,
-                    ':stock'     => $stock,
-                    ':supplier'  => $supplier,
-                    ':price'     => $price,
-                    ':batch'     => $batch_number,
-                    ':dosage'    => $dosage,
-                    ':location'  => $location,
-                    ':min_stock' => $min_stock,
-                    ':desc'      => $description
-                ]);
-
-                $_SESSION['flash_success'] = "Medicine updated successfully!";
+                    $_SESSION['flash_success'] = "Medicine added successfully!";
+                }
             } catch (PDOException $e) {
                 $_SESSION['flash_error'] = "Database Error: " . $e->getMessage();
             }
@@ -186,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
     // --- DELETE MEDICINE ---
     elseif ($_POST['action'] === 'delete_medicine') {
-        $id = (int)($_POST['id'] ?? 0);
+        $id = sanitize_int($_POST['id'] ?? 0);
         if ($id > 0) {
             try {
                 $stmt = $pdo->prepare("DELETE FROM medicines WHERE id = :id");
@@ -227,7 +135,6 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medicines Inventory - PharmaCore</title>
     <link rel="shortcut icon" href="../assets/images/pharmacore_icon.svg" type="image/svg+xml">
-    
     <link rel="stylesheet" href="../assets/css/variables.css">
     <link rel="stylesheet" href="../assets/css/sidebar.css">
     <link rel="stylesheet" href="../assets/css/medicines.css">
