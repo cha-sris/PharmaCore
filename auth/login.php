@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Redirect the user to the dashboard if they are already logged in
 if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
-    header("location: dashboard.php"); // Or whatever your home page is named
+    header("location: dashboard.php"); 
     exit;
 }
 
@@ -19,7 +19,7 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Check if username is empty
+    // Check if username/email is empty
     if (empty(trim($_POST['username']))) {
         $errors['username'] = "Please enter your username.";
     } else {
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validate credentials if no structural field errors exist
     if (empty($errors)) {
         // Prepare a select statement
-        $sql = "SELECT id, username, password FROM users WHERE username = :username";
+        $sql = "SELECT id, username, password FROM users WHERE username = :username OR email = :username";
         
         try {
             $stmt = $pdo->prepare($sql);
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Check if username exists
             if ($stmt->rowCount() === 1) {
-                $user = $stmt->fetch(PDO::class === 'PDO' ? PDO::FETCH_ASSOC : PDO::FETCH_ASSOC);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 $hashed_password = $user['password'];
                 
                 // Verify the hashed password
@@ -54,20 +54,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION["id"] = $user['id'];
                     $_SESSION["username"] = $user['username'];
                     
-                    // Redirect user to dashboard/welcome page
+                    // Redirect user to dashboard
                     header("location: ../modules/dashboard.php");
                     exit;
                 } else {
                     // Display a generic error message for security reasons
                     $errors['login'] = "Invalid username or password.";
+                    // $username = "";
                 }
             } else {
                 $errors['login'] = "Invalid username or password.";
+                // $username = "";
             }
-        } catch (PDOException $e) {
+        } 
+        catch (PDOException $e) {
             $errors['login'] = "Oops! Something went wrong. Please try again later.";
+            // Clear BOTH username and password on wrong input/error
         }
     }
+            $username = "";
+            $password = "";
 }
 ?>
 
@@ -85,17 +91,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #ff4d4d;
             font-size: 0.85rem;
             margin-top: 4px;
+            margin-bottom: 12px;
         }
-        .global-error {
-            background-color: rgba(255, 77, 77, 0.1);
-            border: 1px solid #ff4d4d;
-            padding: 10px;
-            border-radius: 4px;
+        /* .global-error {
+            background-color: rgba(255, 77, 77, 0.15);
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            padding: 10px 14px;
+            border-radius: 6px;
             color: #ff4d4d;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
             font-size: 0.9rem;
-        }
+        } */
     </style>
 </head>
 <body>
@@ -105,17 +112,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Login to PharmaCore</h2>
     </div>
 
-    <form action="" method="post">
+    <form action="" method="post" autocomplete="off" novalidate>
 
         <!-- Display generic invalid credentials error here -->
         <?php if (isset($errors['login'])): ?>
-            <div class="global-error"><?php echo $errors['login']; ?></div>
+            <div class="error-message"><?php echo $errors['login']; ?></div>
         <?php endif; ?>
 
         <div class="form-group">
-            <label for="username">Username</label>
+            <label for="username">Username or Email</label>
             <br>
-            <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($username); ?>" required autofocus>
+            <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($username); ?>"  required autofocus autocomplete="off">
             <?php if (isset($errors['username'])): ?>
                 <div class="error-message"><?php echo $errors['username']; ?></div>
             <?php endif; ?>
@@ -124,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
             <label for="password">Password</label>
             <br>
-            <input type="password" name="password" id="password" required>
+            <input type="password" name="password" id="password" value=""  required autocomplete="new-password">
             <?php if (isset($errors['password'])): ?>
                 <div class="error-message"><?php echo $errors['password']; ?></div>
             <?php endif; ?>
