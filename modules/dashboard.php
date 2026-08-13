@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Redirect to login if not logged in
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    header("location: login.php");
+    header("location: ../auth/login.php");
     exit;
 }
 
@@ -37,7 +37,9 @@ $lowStockCount = 5;
     <?php include '../includes/sidebar.php'; ?>
 
     <!-- Mobile menu toggle -->
-    <button id="menuToggle" aria-label="Toggle sidebar">☰</button>
+    <button id="menuToggle" aria-label="Toggle sidebar">
+        <img src="../assets/images/hamburger-menu.svg" id="hamburgerIcon" alt="hamburger icon">
+    </button>
 
     <!-- Main content -->
     <main class="main-content">
@@ -49,9 +51,11 @@ $lowStockCount = 5;
                 <div class="search-wrapper">
                     <form class="search-form" action="search.php" method="GET" role="search">
                         <div class="search-input-group">
-                            <span class="search-icon">🔍</span>
+                            <!-- <span class="search-icon">
+                                </span> -->
+                                <!-- <img src="../assets/images/search.svg" class="svg-icons" alt="search icon"> -->
                             <input type="text" name="query" class="search-input"
-                                   placeholder="Search medicines, patients, orders..."
+                                   placeholder="Search medicines..."
                                    aria-label="Search" autocomplete="off">
                             <button type="button" class="search-clear" aria-label="Clear search" style="display:none;">✕</button>
                         </div>
