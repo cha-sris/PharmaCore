@@ -490,3 +490,25 @@ body {
     background-color: #f59e0b;
     color: #0f172a;
 }
+
+/* ========================================== */
+/* ADDITIONS (Modal Error Banner & Details)  */
+/* ========================================== */
+
+.modal-error-banner {
+    display: none;
+    background-color: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+    font-weight: 500;
+}
+
+.unit-text {
+    font-weight: 400;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
