@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Redirect the user to the dashboard if they are already logged in
 if (isset($_SESSION["loggedin"]) && $_SESSION["loggedin"] === true) {
-    header("location: dashboard.php"); 
+    header("location: ../modules/dashboard.php"); 
     exit;
 }
 
