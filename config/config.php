@@ -1,8 +1,8 @@
 <?php
 // config.php
 define('DB_SERVER', 'localhost');
-define('DB_USERNAME', 'root'); // Your MySQL username
-define('DB_PASSWORD', '');     // Your MySQL password
+define('DB_USERNAME', 'root'); //  MySQL username
+define('DB_PASSWORD', '');     //  MySQL password
 define('DB_NAME', 'pharmacore_db'); 
 
 try {
