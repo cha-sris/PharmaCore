@@ -9,7 +9,7 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 }
 
 require_once "../config/config.php";
-require_once "../includes/validation.php"; // <--- External validation & sanitization module
+require_once "../includes/validation.php";
 
 // Helper function to map categories to specific icons
 function getCategoryIcon($category) {
@@ -172,9 +172,7 @@ try {
                     <div class="search-form" role="search">
                         <div class="search-input-group">
                             <input type="text" id="medicineSearch" class="search-input" placeholder="Search medicines by name, category, batch..." onkeyup="filterMedicines()">
-                            <button type="button" class="search-btn" onclick="filterMedicines()">Search
-                                <!-- <img src="../assets/images/search_icon.svg" alt="Search" class="icon-img"> -->
-                            </button>
+                            <button type="button" class="search-btn" onclick="filterMedicines()">Search</button>
                         </div>
                     </div>
                 </div>
@@ -241,13 +239,13 @@ try {
                 </button>
             </div>
 
-            <form action="medicines.php" method="POST" novalidate>
+            <form action="medicines.php" method="POST" onsubmit="return validateMedicineForm(this)" novalidate>
                 <input type="hidden" name="action" value="add_medicine">
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="name">Medicine Name *</label>
-                        <input type="text" id="name" name="name" required placeholder="e.g. Paracetamol">
+                        <input type="text" id="name" name="name" required placeholder="e.g. Paracetamol" oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
@@ -273,17 +271,17 @@ try {
 
                     <div class="form-group">
                         <label for="manufacture_date">Manufacture Date *</label>
-                        <input type="date" id="manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>">
+                        <input type="date" id="manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>" oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
                         <label for="expiry_date">Expiry Date *</label>
-                        <input type="date" id="expiry_date" name="expiry_date" required>
+                        <input type="date" id="expiry_date" name="expiry_date" required oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
                         <label for="stock">No. of Items (Stock) *</label>
-                        <input type="number" id="stock" name="stock" value="1" min="1" required>
+                        <input type="number" id="stock" name="stock" value="1" min="1" required oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
@@ -293,7 +291,7 @@ try {
 
                     <div class="form-group">
                         <label for="price">Price *</label>
-                        <input type="number" step="0.01" id="price" name="price" required placeholder="0.00" min="0.01">
+                        <input type="number" step="0.01" id="price" name="price" required placeholder="0.00" min="0.01" oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
@@ -370,14 +368,14 @@ try {
                 </button>
             </div>
 
-            <form action="medicines.php" method="POST" novalidate>
+            <form action="medicines.php" method="POST" onsubmit="return validateMedicineForm(this)" novalidate>
                 <input type="hidden" name="action" value="edit_medicine">
                 <input type="hidden" name="id" id="edit_id">
 
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="edit_name">Medicine Name *</label>
-                        <input type="text" id="edit_name" name="name" required>
+                        <input type="text" id="edit_name" name="name" required oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
@@ -403,17 +401,17 @@ try {
 
                     <div class="form-group">
                         <label for="edit_manufacture_date">Manufacture Date *</label>
-                        <input type="date" id="edit_manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>">
+                        <input type="date" id="edit_manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>" oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_expiry_date">Expiry Date *</label>
-                        <input type="date" id="edit_expiry_date" name="expiry_date" required>
+                        <input type="date" id="edit_expiry_date" name="expiry_date" required oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_stock">No. of Items (Stock) *</label>
-                        <input type="number" id="edit_stock" name="stock" min="1" required>
+                        <input type="number" id="edit_stock" name="stock" min="1" required oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
@@ -423,7 +421,7 @@ try {
 
                     <div class="form-group">
                         <label for="edit_price">Price *</label>
-                        <input type="number" step="0.01" id="edit_price" name="price" required min="0.01">
+                        <input type="number" step="0.01" id="edit_price" name="price" required min="0.01" oninput="this.setCustomValidity('')">
                     </div>
 
                     <div class="form-group">
@@ -509,6 +507,62 @@ try {
         if (modal) {
             modal.classList.remove('active');
         }
+    }
+
+    // Client-side validation function for Medicine forms
+    function validateMedicineForm(form) {
+        const nameInput  = form.querySelector('input[name="name"]');
+        const mfgInput   = form.querySelector('input[name="manufacture_date"]');
+        const expInput   = form.querySelector('input[name="expiry_date"]');
+        const stockInput = form.querySelector('input[name="stock"]');
+        const priceInput = form.querySelector('input[name="price"]');
+
+        [nameInput, mfgInput, expInput, stockInput, priceInput].forEach(input => {
+            if (input) input.setCustomValidity('');
+        });
+
+        // 1. Medicine Name
+        if (!nameInput || !nameInput.value.trim()) {
+            nameInput.setCustomValidity("Please enter the medicine name.");
+            nameInput.reportValidity();
+            return false;
+        }
+
+        // 2. Manufacture Date
+        if (!mfgInput || !mfgInput.value.trim()) {
+            mfgInput.setCustomValidity("Manufacture date is required.");
+            mfgInput.reportValidity();
+            return false;
+        }
+
+        // 3. Expiry Date
+        if (!expInput || !expInput.value.trim()) {
+            expInput.setCustomValidity("Expiry date is required.");
+            expInput.reportValidity();
+            return false;
+        }
+
+        if (mfgInput.value && expInput.value && new Date(expInput.value) <= new Date(mfgInput.value)) {
+            expInput.setCustomValidity("Expiry date must be after manufacture date.");
+            expInput.reportValidity();
+            return false;
+        }
+
+        // 4. Stock
+        if (!stockInput || !stockInput.value.trim() || parseInt(stockInput.value, 10) < 1) {
+            stockInput.setCustomValidity("Please enter a valid stock quantity.");
+            stockInput.reportValidity();
+            return false;
+        }
+
+        // 5. Price
+        if (!priceInput || !priceInput.value.trim() || parseFloat(priceInput.value) <= 0) {
+            priceInput.setCustomValidity("Price is required and must be greater than 0.");
+            priceInput.reportValidity();
+            return false;
+        }
+
+        return true;
     }
 
     // Real-time Search / Filter Logic
