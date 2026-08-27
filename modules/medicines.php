@@ -798,6 +798,28 @@ try {
                 if (form) clearErrors(form);
             }
         }
+
+        // Auto-open medicine details if ?view=ID is in the URL
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewId = urlParams.get('view');
+    if (viewId) {
+        setTimeout(function() {
+            const card = document.querySelector('.med-card[data-id="' + viewId + '"]');
+            if (card) {
+                card.click(); // triggers the details modal
+                // Remove ?view from URL without reloading the page
+                if (window.history && window.history.replaceState) {
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                }
+            } else {
+                // Optional: show a flash message that medicine wasn't found
+                console.warn('Medicine with ID ' + viewId + ' not found.');
+            }
+        }, 100);
+    }
+});
     </script>
 </body>
 </html>
