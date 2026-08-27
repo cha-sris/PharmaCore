@@ -1,4 +1,5 @@
 <?php
+// modules/medicines.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -11,31 +12,30 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 require_once "../config/config.php";
 require_once "../includes/validation.php";
 
-// Helper function to map categories to specific icons
+// Dynamic category icon mapper
 function getCategoryIcon($category) {
     $cat = strtolower(trim($category));
-    switch ($cat) {
-        case 'antibiotic':
-            return 'pill-box.svg';
-        case 'antiseptic':
-            return 'ointment.svg';
-        case 'supplement':
-        case 'supplement / vitamin':
-            return 'pill-box.svg'; 
-        case 'analgesic':
-            return 'medicine.svg';
-        default:
-            return 'medicine.svg';
+    
+    if (strpos($cat, 'antibiotic') !== false) {
+        return 'pill-box.svg';
+    } elseif (strpos($cat, 'antiseptic') !== false) {
+        return 'ointment.svg';
+    } elseif (strpos($cat, 'supplement') !== false || strpos($cat, 'vitamin') !== false) {
+        return 'pill-box.svg';
+    } elseif (strpos($cat, 'analgesic') !== false || strpos($cat, 'pain') !== false) {
+        return 'medicine.svg';
     }
+    
+    return 'medicine.svg';
 }
 
+// Handle Form Submissions (Add, Edit, Delete)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
-    // --- ADD OR EDIT MEDICINE ---
     if ($_POST['action'] === 'add_medicine' || $_POST['action'] === 'edit_medicine') {
         $is_edit = ($_POST['action'] === 'edit_medicine');
 
-        // 1. Sanitize all incoming input
+        // Sanitize inputs via validation.php helpers
         $id               = sanitize_int($_POST['id'] ?? 0);
         $name             = sanitize_text($_POST['name'] ?? '');
         $category         = sanitize_text($_POST['category'] ?? '');
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $min_stock        = sanitize_int($_POST['min_stock'] ?? 5);
         $description      = sanitize_text($_POST['description'] ?? '');
 
-        // 2. Validate form data against rules in includes/validation.php
+        // Validate backend input data
         $errors = validate_medicine_form($_POST, $is_edit);
 
         if (!empty($errors)) {
@@ -109,8 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
     }
-
-    // --- DELETE MEDICINE ---
     elseif ($_POST['action'] === 'delete_medicine') {
         $id = sanitize_int($_POST['id'] ?? 0);
         if ($id > 0) {
@@ -128,12 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     exit;
 }
 
-// Extract & Clear Flash Messages
+// Session Flash Messages
 $db_error = $_SESSION['flash_error'] ?? '';
 $success_msg = $_SESSION['flash_success'] ?? '';
 unset($_SESSION['flash_error'], $_SESSION['flash_success']);
 
-// Fetch Medicines Inventory
+// Fetch Inventory Items
 $medicines = [];
 try {
     $sql = "SELECT *, DATEDIFF(expiry_date, CURDATE()) AS days_to_expiry 
@@ -167,14 +165,23 @@ try {
 
             <div class="page-header">
                 <h2>Medicines Inventory</h2>
-                <!-- Search Bar with Search Button -->
                 <div class="search-wrapper">
                     <div class="search-form" role="search">
                         <div class="search-input-group">
-                            <input type="text" id="medicineSearch" class="search-input" placeholder="Search medicines by name, category, batch..." onkeyup="filterMedicines()">
-                            <button type="button" class="search-btn" onclick="filterMedicines()">Search</button>
+                            <input type="text" id="medicineSearch" class="search-input" placeholder="Search medicines by name, category, batch..." oninput="filterAndSortMedicines()">
+                            <button type="button" class="search-btn" onclick="filterAndSortMedicines()">Search</button>
                         </div>
                     </div>
+                    <select id="medicineSort" class="standalone-sort" onchange="filterAndSortMedicines()">
+                        <option value="default">Sort by: Default</option>
+                        <option value="name_asc">Name (A-Z)</option>
+                        <option value="name_desc">Name (Z-A)</option>
+                        <option value="stock_asc">Stock (Low to High)</option>
+                        <option value="stock_desc">Stock (High to Low)</option>
+                        <option value="expiry_asc">Expiry (Soonest First)</option>
+                        <option value="price_asc">Price (Low to High)</option>
+                        <option value="price_desc">Price (High to Low)</option>
+                    </select>
                 </div>
             </div>
 
@@ -188,25 +195,31 @@ try {
 
             <div class="medicine-grid" id="medicineGrid">
 
-                <!-- 1. Add Medicine Tile (Always visible) -->
-                <div class="med-card add-card" onclick="openAddModal()">
+                <!-- Add Medicine Tile -->
+                <div class="med-card add-card" id="addMedicineTile" onclick="openAddModal()">
                     <div class="add-icon">
                         <img src="../assets/images/add_icon.svg" alt="Add" class="icon-img">
                     </div>
                     <span class="add-text">Add Medicine</span>
                 </div>
 
-                <!-- 2. Dynamic Medicine Cards -->
+                <!-- Medicine Inventory Cards -->
                 <?php foreach ($medicines as $med): ?>
                     <?php 
                         $stock = (int)$med['stock'];
                         $json_data = htmlspecialchars(json_encode($med), ENT_QUOTES, 'UTF-8');
                         $categoryIcon = getCategoryIcon($med['category']);
+                        $search_text = strtolower(htmlspecialchars($med['name'] . ' ' . $med['category'] . ' ' . $med['batch_number'] . ' ' . $med['supplier'], ENT_QUOTES));
                     ?>
                     <div class="med-card clickable searchable-card" 
                          onclick="openDetailsModal(this)" 
                          data-medicine='<?php echo $json_data; ?>'
-                         data-search-text="<?php echo strtolower(htmlspecialchars($med['name'] . ' ' . $med['category'] . ' ' . $med['batch_number'] . ' ' . $med['supplier'], ENT_QUOTES)); ?>">
+                         data-id="<?php echo (int)$med['id']; ?>"
+                         data-name="<?php echo htmlspecialchars(strtolower($med['name']), ENT_QUOTES); ?>"
+                         data-stock="<?php echo $stock; ?>"
+                         data-exp="<?php echo htmlspecialchars($med['expiry_date'], ENT_QUOTES); ?>"
+                         data-price="<?php echo (float)$med['price']; ?>"
+                         data-search-text="<?php echo $search_text; ?>">
                         <div class="med-collapsed">
                             <div class="med-icon">
                                 <img src="../assets/images/<?php echo $categoryIcon; ?>" alt="Medicine Category" class="icon-img">
@@ -219,7 +232,6 @@ try {
 
             </div>
 
-            <!-- No results notice element -->
             <div id="noResults" class="no-results-msg" style="display: none;">
                 <p>No matching medicines found.</p>
             </div>
@@ -227,9 +239,16 @@ try {
         </div>
     </main>
 
-    <!-- ================================================================ -->
-    <!-- MODAL 1: ADD NEW MEDICINE                                        -->
-    <!-- ================================================================ -->
+    <!-- Custom Category Autocomplete Suggestions -->
+    <datalist id="category_list">
+        <option value="Analgesic">
+        <option value="Antibiotic">
+        <option value="Antiseptic">
+        <option value="Supplement / Vitamin">
+        <option value="Other">
+    </datalist>
+
+    <!-- MODAL 1: ADD MEDICINE -->
     <div class="modal-overlay" id="addMedicineModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -245,22 +264,16 @@ try {
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="name">Medicine Name *</label>
-                        <input type="text" id="name" name="name" required placeholder="e.g. Paracetamol" oninput="this.setCustomValidity('')">
+                        <input type="text" id="name" name="name" required placeholder="e.g. Paracetamol">
                     </div>
 
                     <div class="form-group">
                         <label for="category">Category</label>
-                        <select id="category" name="category">
-                            <option value="Analgesic">Analgesic</option>
-                            <option value="Antibiotic">Antibiotic</option>
-                            <option value="Antiseptic">Antiseptic</option>
-                            <option value="Supplement">Supplement / Vitamin</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <input type="text" id="category" name="category" list="category_list" placeholder="Select or type custom category...">
                     </div>
 
                     <div class="form-group">
-                        <label for="dosage">Dosage / Strength (e.g. 500mg, 10.5ml)</label>
+                        <label for="dosage">Dosage / Strength</label>
                         <input type="text" id="dosage" name="dosage" placeholder="e.g. 500mg, 10.5ml">
                     </div>
 
@@ -271,17 +284,17 @@ try {
 
                     <div class="form-group">
                         <label for="manufacture_date">Manufacture Date *</label>
-                        <input type="date" id="manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>" oninput="this.setCustomValidity('')">
+                        <input type="date" id="manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>">
                     </div>
 
                     <div class="form-group">
                         <label for="expiry_date">Expiry Date *</label>
-                        <input type="date" id="expiry_date" name="expiry_date" required oninput="this.setCustomValidity('')">
+                        <input type="date" id="expiry_date" name="expiry_date" required>
                     </div>
 
                     <div class="form-group">
                         <label for="stock">No. of Items (Stock) *</label>
-                        <input type="number" id="stock" name="stock" value="1" min="1" required oninput="this.setCustomValidity('')">
+                        <input type="number" id="stock" name="stock" value="1" min="1" required>
                     </div>
 
                     <div class="form-group">
@@ -291,7 +304,7 @@ try {
 
                     <div class="form-group">
                         <label for="price">Price *</label>
-                        <input type="number" step="0.01" id="price" name="price" required placeholder="0.00" min="0.01" oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" id="price" name="price" required placeholder="0.00" min="0.01">
                     </div>
 
                     <div class="form-group">
@@ -318,9 +331,7 @@ try {
         </div>
     </div>
 
-    <!-- ================================================================ -->
-    <!-- MODAL 2: VIEW MEDICINE DETAILS                                    -->
-    <!-- ================================================================ -->
+    <!-- MODAL 2: VIEW DETAILS -->
     <div class="modal-overlay" id="viewDetailsModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -356,9 +367,7 @@ try {
         </div>
     </div>
 
-    <!-- ================================================================ -->
-    <!-- MODAL 3: EDIT MEDICINE                                           -->
-    <!-- ================================================================ -->
+    <!-- MODAL 3: EDIT MEDICINE -->
     <div class="modal-overlay" id="editMedicineModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -375,22 +384,16 @@ try {
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="edit_name">Medicine Name *</label>
-                        <input type="text" id="edit_name" name="name" required oninput="this.setCustomValidity('')">
+                        <input type="text" id="edit_name" name="name" required>
                     </div>
 
                     <div class="form-group">
                         <label for="edit_category">Category</label>
-                        <select id="edit_category" name="category">
-                            <option value="Analgesic">Analgesic</option>
-                            <option value="Antibiotic">Antibiotic</option>
-                            <option value="Antiseptic">Antiseptic</option>
-                            <option value="Supplement">Supplement / Vitamin</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <input type="text" id="edit_category" name="category" list="category_list" placeholder="Select or type custom category...">
                     </div>
 
                     <div class="form-group">
-                        <label for="edit_dosage">Dosage / Strength (e.g. 500mg, 10.5ml)</label>
+                        <label for="edit_dosage">Dosage / Strength</label>
                         <input type="text" id="edit_dosage" name="dosage">
                     </div>
 
@@ -401,17 +404,17 @@ try {
 
                     <div class="form-group">
                         <label for="edit_manufacture_date">Manufacture Date *</label>
-                        <input type="date" id="edit_manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>" oninput="this.setCustomValidity('')">
+                        <input type="date" id="edit_manufacture_date" name="manufacture_date" required max="<?= date('Y-m-d'); ?>">
                     </div>
 
                     <div class="form-group">
                         <label for="edit_expiry_date">Expiry Date *</label>
-                        <input type="date" id="edit_expiry_date" name="expiry_date" required oninput="this.setCustomValidity('')">
+                        <input type="date" id="edit_expiry_date" name="expiry_date" required>
                     </div>
 
                     <div class="form-group">
                         <label for="edit_stock">No. of Items (Stock) *</label>
-                        <input type="number" id="edit_stock" name="stock" min="1" required oninput="this.setCustomValidity('')">
+                        <input type="number" id="edit_stock" name="stock" min="1" required>
                     </div>
 
                     <div class="form-group">
@@ -421,7 +424,7 @@ try {
 
                     <div class="form-group">
                         <label for="edit_price">Price *</label>
-                        <input type="number" step="0.01" id="edit_price" name="price" required min="0.01" oninput="this.setCustomValidity('')">
+                        <input type="number" step="0.01" id="edit_price" name="price" required min="0.01">
                     </div>
 
                     <div class="form-group">
@@ -450,6 +453,69 @@ try {
 
     <script>
     let currentMedicineData = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const forms = document.querySelectorAll('#addMedicineModal form, #editMedicineModal form');
+        forms.forEach(form => setupLiveValidation(form));
+    });
+
+    function setupLiveValidation(form) {
+        const inputs = form.querySelectorAll('input[required], input[type="number"], input[type="date"]');
+        inputs.forEach(input => {
+            ['input', 'change', 'blur'].forEach(eventType => {
+                input.addEventListener(eventType, () => validateSingleInput(input, form));
+            });
+        });
+    }
+
+    function validateSingleInput(input, form) {
+        input.setCustomValidity('');
+
+        const nameInput  = form.querySelector('input[name="name"]');
+        const mfgInput   = form.querySelector('input[name="manufacture_date"]');
+        const expInput   = form.querySelector('input[name="expiry_date"]');
+        const stockInput = form.querySelector('input[name="stock"]');
+        const priceInput = form.querySelector('input[name="price"]');
+
+        if (input === nameInput && !input.value.trim()) {
+            input.setCustomValidity("Please enter the medicine name.");
+        } 
+        else if (input === mfgInput && !input.value.trim()) {
+            input.setCustomValidity("Manufacture date is required.");
+        } 
+        else if (input === expInput) {
+            if (!input.value.trim()) {
+                input.setCustomValidity("Expiry date is required.");
+            } else if (mfgInput && mfgInput.value && new Date(input.value) <= new Date(mfgInput.value)) {
+                input.setCustomValidity("Expiry date must be after manufacture date.");
+            }
+        } 
+        else if (input === stockInput && (!input.value.trim() || parseInt(input.value, 10) < 1)) {
+            input.setCustomValidity("Please enter a valid stock quantity (at least 1).");
+        } 
+        else if (input === priceInput && (!input.value.trim() || parseFloat(input.value) <= 0)) {
+            input.setCustomValidity("Price is required and must be greater than 0.");
+        }
+
+        if (!input.checkValidity()) {
+            input.reportValidity();
+        }
+    }
+
+    function validateMedicineForm(form) {
+        const inputs = form.querySelectorAll('input[required], input[type="number"], input[type="date"]');
+        let isValid = true;
+
+        inputs.forEach(input => {
+            validateSingleInput(input, form);
+            if (!input.checkValidity() && isValid) {
+                input.reportValidity();
+                isValid = false;
+            }
+        });
+
+        return isValid;
+    }
 
     function openAddModal() {
         document.getElementById('addMedicineModal').classList.add('active');
@@ -487,7 +553,7 @@ try {
 
         document.getElementById('edit_id').value = currentMedicineData.id;
         document.getElementById('edit_name').value = currentMedicineData.name || '';
-        document.getElementById('edit_category').value = currentMedicineData.category || 'Analgesic';
+        document.getElementById('edit_category').value = currentMedicineData.category || '';
         document.getElementById('edit_dosage').value = currentMedicineData.dosage || '';
         document.getElementById('edit_batch_number').value = currentMedicineData.batch_number || '';
         document.getElementById('edit_manufacture_date').value = currentMedicineData.manufacture_date || '';
@@ -509,66 +575,11 @@ try {
         }
     }
 
-    // Client-side validation function for Medicine forms
-    function validateMedicineForm(form) {
-        const nameInput  = form.querySelector('input[name="name"]');
-        const mfgInput   = form.querySelector('input[name="manufacture_date"]');
-        const expInput   = form.querySelector('input[name="expiry_date"]');
-        const stockInput = form.querySelector('input[name="stock"]');
-        const priceInput = form.querySelector('input[name="price"]');
-
-        [nameInput, mfgInput, expInput, stockInput, priceInput].forEach(input => {
-            if (input) input.setCustomValidity('');
-        });
-
-        // 1. Medicine Name
-        if (!nameInput || !nameInput.value.trim()) {
-            nameInput.setCustomValidity("Please enter the medicine name.");
-            nameInput.reportValidity();
-            return false;
-        }
-
-        // 2. Manufacture Date
-        if (!mfgInput || !mfgInput.value.trim()) {
-            mfgInput.setCustomValidity("Manufacture date is required.");
-            mfgInput.reportValidity();
-            return false;
-        }
-
-        // 3. Expiry Date
-        if (!expInput || !expInput.value.trim()) {
-            expInput.setCustomValidity("Expiry date is required.");
-            expInput.reportValidity();
-            return false;
-        }
-
-        if (mfgInput.value && expInput.value && new Date(expInput.value) <= new Date(mfgInput.value)) {
-            expInput.setCustomValidity("Expiry date must be after manufacture date.");
-            expInput.reportValidity();
-            return false;
-        }
-
-        // 4. Stock
-        if (!stockInput || !stockInput.value.trim() || parseInt(stockInput.value, 10) < 1) {
-            stockInput.setCustomValidity("Please enter a valid stock quantity.");
-            stockInput.reportValidity();
-            return false;
-        }
-
-        // 5. Price
-        if (!priceInput || !priceInput.value.trim() || parseFloat(priceInput.value) <= 0) {
-            priceInput.setCustomValidity("Price is required and must be greater than 0.");
-            priceInput.reportValidity();
-            return false;
-        }
-
-        return true;
-    }
-
-    // Real-time Search / Filter Logic
-    function filterMedicines() {
+    function filterAndSortMedicines() {
         const query = document.getElementById('medicineSearch').value.toLowerCase().trim();
-        const cards = document.querySelectorAll('.searchable-card');
+        const sortCriteria = document.getElementById('medicineSort').value;
+        const grid = document.getElementById('medicineGrid');
+        const cards = Array.from(document.querySelectorAll('.searchable-card'));
         const noResults = document.getElementById('noResults');
         let visibleCount = 0;
 
@@ -582,21 +593,41 @@ try {
             }
         });
 
-        // Show or hide the 'no results' message
-        if (visibleCount === 0 && query !== '') {
-            noResults.style.display = 'block';
-        } else {
-            noResults.style.display = 'none';
+        cards.sort((a, b) => {
+            switch (sortCriteria) {
+                case 'name_asc':
+                    return a.getAttribute('data-name').localeCompare(b.getAttribute('data-name'));
+                case 'name_desc':
+                    return b.getAttribute('data-name').localeCompare(a.getAttribute('data-name'));
+                case 'stock_asc':
+                    return parseInt(a.getAttribute('data-stock'), 10) - parseInt(b.getAttribute('data-stock'), 10);
+                case 'stock_desc':
+                    return parseInt(b.getAttribute('data-stock'), 10) - parseInt(a.getAttribute('data-stock'), 10);
+                case 'expiry_asc':
+                    return new Date(a.getAttribute('data-exp')) - new Date(b.getAttribute('data-exp'));
+                case 'price_asc':
+                    return parseFloat(a.getAttribute('data-price')) - parseFloat(b.getAttribute('data-price'));
+                case 'price_desc':
+                    return parseFloat(b.getAttribute('data-price')) - parseFloat(a.getAttribute('data-price'));
+                case 'default':
+                default:
+                    // Resets cards back to initial DB sequence (ID DESC)
+                    return parseInt(b.getAttribute('data-id'), 10) - parseInt(a.getAttribute('data-id'), 10);
+            }
+        });
+
+        cards.forEach(card => grid.appendChild(card));
+
+        if (noResults) {
+            noResults.style.display = (visibleCount === 0 && query !== '') ? 'block' : 'none';
         }
     }
 
-    // Close modal when clicking on backdrop
     window.onclick = function(event) {
         if (event.target.classList.contains('modal-overlay')) {
             event.target.classList.remove('active');
         }
     }
     </script>
-
 </body>
 </html>
