@@ -522,6 +522,18 @@ table button:hover,
     font-size: 0.85rem;
 }
 
+/* ===== INLINE FIELD ERRORS ===== */
+.field-error {
+    color: var(--color-danger);
+    font-size: 0.8rem;
+    margin-top: 4px;
+    display: block;
+    min-height: 1.2em;
+}
+.field-error:empty {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .main-content {
         margin-left: 0;
