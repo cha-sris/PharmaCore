@@ -19,8 +19,13 @@ $recentMedicines = [];
 $recentSuppliers = [];
 $recentSales = [];
 $allMedicines = [];
+$chartLabels = "[]";
+$chartValues = "[]";
 $saleMessage = "";
 $saleError = "";
+
+// Get selected chart filter (Default: this_month)
+$chartFilter = $_GET['chart_filter'] ?? 'this_month';
 
 // Handle flash messages from redirect
 if (isset($_SESSION['sale_success'])) {
@@ -77,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sell_medicine'])) {
     }
 
     // Redirect to prevent duplicate form submission on refresh (F5)
-    header("Location: dashboard.php");
+    header("Location: dashboard.php?chart_filter=" . urlencode($chartFilter));
     exit();
 }
 
@@ -94,9 +99,31 @@ try {
     $recentMedicines = $pdo->query("SELECT name, batch_number, stock FROM medicines ORDER BY created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
     $recentSuppliers = $pdo->query("SELECT name, contact_person, phone, status FROM suppliers ORDER BY created_at DESC LIMIT 5")->fetchAll(PDO::FETCH_ASSOC);
     
-    // Fetch Recent Sales
+    // Fetch Recent Sales Table Data
     $stmtRecentSales = $pdo->query("SELECT s.quantity_sold, s.sold_at, m.name, m.batch_number FROM sales s JOIN medicines m ON s.medicine_id = m.id ORDER BY s.sold_at DESC LIMIT 5");
     $recentSales = $stmtRecentSales->fetchAll(PDO::FETCH_ASSOC);
+
+    // Filter SQL query based on timeframe selection
+    $whereClause = "WHERE s.sold_at >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')"; // Default: This Month
+    if ($chartFilter === 'last_month') {
+        $whereClause = "WHERE s.sold_at >= DATE_FORMAT(CURRENT_DATE - INTERVAL 1 MONTH, '%Y-%m-01') AND s.sold_at < DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')";
+    } elseif ($chartFilter === 'this_year') {
+        $whereClause = "WHERE s.sold_at >= DATE_FORMAT(CURRENT_DATE, '%Y-01-01')";
+    }
+
+    // Fetch Aggregated Sold Medicines ordered chronologically by first sale date (oldest to newest)
+    $chartQuery = "SELECT m.name, SUM(s.quantity_sold) as total_quantity, MIN(s.sold_at) as first_sale 
+                   FROM sales s 
+                   JOIN medicines m ON s.medicine_id = m.id 
+                   {$whereClause}
+                   GROUP BY s.medicine_id 
+                   ORDER BY first_sale ASC 
+                   LIMIT 7";
+    $stmtChartData = $pdo->query($chartQuery);
+    $chartData = $stmtChartData->fetchAll(PDO::FETCH_ASSOC);
+
+    $chartLabels = json_encode(array_column($chartData, 'name'));
+    $chartValues = json_encode(array_column($chartData, 'total_quantity'));
 
     $allMedicines = $pdo->query("SELECT id, name, stock FROM medicines WHERE stock > 0 ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -113,6 +140,8 @@ try {
     <link rel="stylesheet" href="../assets/css/variables.css">
     <link rel="stylesheet" href="../assets/css/sidebar.css">
     <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <!-- Chart.js CDN for visual graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -143,7 +172,7 @@ try {
                 <?php if (!empty($saleError)): ?>
                     <div class="alert-box alert-error"><?php echo $saleError; ?></div>
                 <?php endif; ?>
-                <form action="dashboard.php" method="POST" class="sell-form">
+                <form action="dashboard.php?chart_filter=<?php echo urlencode($chartFilter); ?>" method="POST" class="sell-form">
                     <input type="hidden" name="sell_medicine" value="1">
                     <div class="form-group">
                         <label for="medicine_id">SELECT MEDICINE</label>
@@ -232,6 +261,27 @@ try {
             <!-- Dashboard Tables Grid -->
             <div class="dashboard-tables-grid">
                 
+                <!-- Recently Sold Medicines Line Graph Visualizer -->
+                <div class="table-card table-card-full">
+                    <div class="table-header">
+                        <h3>
+                            <img src="../assets/images/recent-book.svg" alt="Sales Chart Icon" class="section-icon">
+                            Recently Sold Medicines Trend (Oldest to Newest)
+                        </h3>
+                        <!-- Timeframe Filter Dropdown -->
+                        <form method="GET" action="dashboard.php" class="header-form">
+                            <select name="chart_filter" onchange="this.form.submit()" class="chart-filter-select">
+                                <option value="this_month" <?php echo $chartFilter === 'this_month' ? 'selected' : ''; ?>>This Month</option>
+                                <option value="last_month" <?php echo $chartFilter === 'last_month' ? 'selected' : ''; ?>>Last Month</option>
+                                <option value="this_year" <?php echo $chartFilter === 'this_year' ? 'selected' : ''; ?>>This Year</option>
+                            </select>
+                        </form>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
                 <!-- Recent Inventory Column -->
                 <div class="table-card">
                     <div class="table-header">
@@ -282,7 +332,7 @@ try {
                     <div class="table-header">
                         <h3>
                             <img src="../assets/images/recent-book.svg" alt="Sales Icon" class="section-icon">
-                            Recently Sold Medicines
+                            Recently Sold Medicines Log
                         </h3>
                     </div>
                     <table>
@@ -314,7 +364,7 @@ try {
                 </div>
 
                 <!-- Recent Suppliers Column -->
-                <div class="table-card" style="grid-column: span 2;">
+                <div class="table-card table-card-full">
                     <div class="table-header">
                         <h3>
                             <img src="../assets/images/suppliers.svg" alt="Suppliers Icon" class="section-icon">
@@ -359,5 +409,74 @@ try {
         </div>
     </main>
 
+    <!-- Script to Render Top Sales Line Graph -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const labels = <?php echo $chartLabels; ?>;
+    const values = <?php echo $chartValues; ?>;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels.length ? labels : ['No Sales Recorded'],
+            datasets: [{
+                label: 'Total Units Sold',
+                data: values.length ? values : [0],
+                borderColor: '#3b82f6',
+                backgroundColor: gradient,
+                borderWidth: 2.5,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { 
+                        precision: 0, 
+                        color: '#94a3b8',
+                        font: {
+                            size: 16 // Change Y-axis font size here
+                        }
+                    },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                },
+                x: {
+                    ticks: { 
+                        color: '#94a3b8',
+                        font: {
+                            size: 16 // Change X-axis (medicine names) font size here
+                        }
+                    },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: { 
+                        color: '#f8fafc',
+                        font: {
+                            size: 16 // Change legend ("Total Units Sold") font size here
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
 </body>
 </html>
