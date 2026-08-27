@@ -10,7 +10,7 @@ body {
     justify-content: center;
     min-height: 100vh;
     gap: 24px;
-    font-family: sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .auth-header {
@@ -19,8 +19,14 @@ body {
     align-items: center;
 }
 
-img {
+.auth-header img {
     max-width: 55px;
+}
+
+.auth-header h2 {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 12px 0 0;
 }
 
 form {
@@ -32,17 +38,28 @@ form {
     padding: 30px;
     border-radius: 18px;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     box-sizing: border-box;
 }
 
-input {
+/* ===== INPUT FIELDS – larger font size ===== */
+.form-group input {
     background-color: var(--bg-tertiary);
     border: 2px solid var(--border-muted);
-    padding: 13px;
+    padding: 14px 16px;
     border-radius: 10px;
-    caret-color: var(--text-primary); /* Matches whatever the current text color is */
-    color: white;
+    caret-color: var(--text-primary);
+    color: var(--text-primary);
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1.1rem; /* Increased from default (~14px) to ~17.6px */
+    line-height: 1.4;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--color-info);
 }
 
 .form-group {
@@ -51,11 +68,78 @@ input {
     width: 100%;
 }
 
+.form-group label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
 button[type="submit"] {
     width: 100%;
-    padding: 15px;
-    font-size: 16px;
+    padding: 16px;
+    font-size: 1.1rem;
     font-weight: 600;
     border-radius: 10px;
-    background-color: var(--raven-95);
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+button[type="submit"]:hover {
+    background-color: var(--btn-primary-hover);
+}
+
+button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+.auth-footer {
+    text-align: center;
+    width: 100%;
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.auth-footer a {
+    color: var(--color-info);
+    text-decoration: none;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ===== Inline validation error messages ===== */
+.field-error {
+    color: var(--color-danger);
+    font-size: 0.85rem;
+    margin-top: 4px;
+    display: block;
+    min-height: 1.2em;
+}
+.field-error:empty {
+    display: none;
+}
+
+/* ===== Error state for input fields ===== */
+.form-group input.error {
+    border-color: var(--color-danger);
+}
+
+/* ===== Backend error message (global) ===== */
+.error-message {
+    color: var(--color-danger);
+    font-size: 0.9rem;
+    margin-top: 4px;
+    margin-bottom: 12px;
+}
+
+/* ===== For multi-line error messages (password requirements) ===== */
+.error-message br {
+    display: block;
+    content: '';
+    margin-top: 2px;
 }

@@ -246,6 +246,20 @@ function validate_email_address(string $email): ?string {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         return "Please enter a valid email address.";
     }
+    // Additional checks to block obviously malformed domains
+    $parts = explode('@', $email);
+    if (count($parts) !== 2) {
+        return "Invalid email format.";
+    }
+    $domain = $parts[1];
+    // Reject domain that starts/ends with dot or has consecutive dots
+    if (str_starts_with($domain, '.') || str_ends_with($domain, '.') || strpos($domain, '..') !== false) {
+        return "Invalid email domain.";
+    }
+    $tld = substr(strrchr($domain, '.'), 1);
+    if (!preg_match('/^[a-zA-Z]{2,}$/', $tld)) {
+        return "Invalid email domain (TLD must be at least 2 letters).";
+    }
     return null;
 }
 

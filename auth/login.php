@@ -35,45 +35,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validate credentials if no structural field errors exist
     if (empty($errors)) {
-        // Prepare a select statement
         $sql = "SELECT id, username, password FROM users WHERE username = :username OR email = :username";
         
         try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute([':username' => $username]);
             
-            // Check if username exists
             if ($stmt->rowCount() === 1) {
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 $hashed_password = $user['password'];
                 
-                // Verify the hashed password
                 if (password_verify($password, $hashed_password)) {
-                    // Password is correct, start a new session
                     $_SESSION["loggedin"] = true;
                     $_SESSION["id"] = $user['id'];
                     $_SESSION["username"] = $user['username'];
                     
-                    // Redirect user to dashboard
                     header("location: ../modules/dashboard.php");
                     exit;
                 } else {
-                    // Display a generic error message for security reasons
                     $errors['login'] = "Invalid username or password.";
-                    // $username = "";
                 }
             } else {
                 $errors['login'] = "Invalid username or password.";
-                // $username = "";
             }
         } 
         catch (PDOException $e) {
             $errors['login'] = "Oops! Something went wrong. Please try again later.";
-            // Clear BOTH username and password on wrong input/error
         }
     }
-            $username = "";
-            $password = "";
+    // Clear sensitive data
+    $username = "";
+    $password = "";
 }
 ?>
 
@@ -86,24 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="shortcut icon" href="../assets/images/pharmacore_icon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="../assets/css/variables.css">
     <link rel="stylesheet" href="../assets/css/auth.css">
-    <style>
-        .error-message {
-            color: #ff4d4d;
-            font-size: 0.85rem;
-            margin-top: 4px;
-            margin-bottom: 12px;
-        }
-        /* .global-error {
-            background-color: rgba(255, 77, 77, 0.15);
-            border: 1px solid rgba(255, 77, 77, 0.3);
-            padding: 10px 14px;
-            border-radius: 6px;
-            color: #ff4d4d;
-            text-align: center;
-            margin-bottom: 16px;
-            font-size: 0.9rem;
-        } */
-    </style>
 </head>
 <body>
 
@@ -112,17 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Login to PharmaCore</h2>
     </div>
 
-    <form action="" method="post" autocomplete="off" novalidate>
+    <form action="" method="post" id="loginForm" autocomplete="off" novalidate>
 
-        <!-- Display generic invalid credentials error here -->
         <?php if (isset($errors['login'])): ?>
             <div class="error-message"><?php echo $errors['login']; ?></div>
         <?php endif; ?>
 
         <div class="form-group">
             <label for="username">Username or Email</label>
-            <br>
-            <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($username); ?>"  required autofocus autocomplete="off">
+            <input type="text" name="username" id="username" value="<?php echo htmlspecialchars($username); ?>" required autofocus autocomplete="off">
+            <span class="field-error" id="username-error"></span>
             <?php if (isset($errors['username'])): ?>
                 <div class="error-message"><?php echo $errors['username']; ?></div>
             <?php endif; ?>
@@ -130,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group">
             <label for="password">Password</label>
-            <br>
-            <input type="password" name="password" id="password" value=""  required autocomplete="new-password">
+            <input type="password" name="password" id="password" value="" required autocomplete="new-password">
+            <span class="field-error" id="password-error"></span>
             <?php if (isset($errors['password'])): ?>
                 <div class="error-message"><?php echo $errors['password']; ?></div>
             <?php endif; ?>
@@ -144,6 +117,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
     </form>
+
+    <script>
+        // Live validation for Login page
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const fields = ['username', 'password'];
+            
+            fields.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    ['input', 'change', 'blur'].forEach(eventType => {
+                        input.addEventListener(eventType, function() {
+                            validateLoginField(this);
+                        });
+                    });
+                }
+            });
+
+            form.addEventListener('submit', function(e) {
+                let allValid = true;
+                fields.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input && !validateLoginField(input)) {
+                        allValid = false;
+                    }
+                });
+                if (!allValid) {
+                    e.preventDefault();
+                    const firstError = form.querySelector('.field-error:not(:empty)');
+                    if (firstError) {
+                        const fieldId = firstError.id.replace('-error', '');
+                        const field = document.getElementById(fieldId);
+                        if (field) field.focus();
+                    }
+                }
+            });
+        });
+
+        function validateLoginField(field) {
+            const id = field.id;
+            const value = field.value.trim();
+            const errorId = id + '-error';
+            const errorEl = document.getElementById(errorId);
+            if (!errorEl) return true;
+
+            let errorMsg = '';
+
+            switch (id) {
+                case 'username':
+                    if (value === '') {
+                        errorMsg = 'Please enter your username or email.';
+                    }
+                    break;
+                case 'password':
+                    if (value === '') {
+                        errorMsg = 'Please enter your password.';
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            errorEl.textContent = errorMsg;
+            if (errorMsg) {
+                field.classList.add('error');
+            } else {
+                field.classList.remove('error');
+            }
+            return errorMsg === '';
+        }
+    </script>
 
 </body>
 </html>
